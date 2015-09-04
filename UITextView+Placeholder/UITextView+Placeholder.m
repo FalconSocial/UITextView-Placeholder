@@ -1,18 +1,18 @@
 /*
  The MIT License (MIT)
-
+ 
  Copyright (c) 2014 Suyeol Jeon (http://xoul.kr)
-
+ 
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
-
+ 
  The above copyright notice and this permission notice shall be included in all
  copies or substantial portions of the Software.
-
+ 
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,7 +20,7 @@
  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  SOFTWARE.
-*/
+ */
 
 #import <objc/runtime.h>
 #import "UITextView+Placeholder.h"
@@ -31,7 +31,7 @@
 
 + (void)load {
     [super load];
-
+    
     // is this the best solution?
     method_exchangeImplementations(class_getInstanceMethod(self.class, NSSelectorFromString(@"dealloc")),
                                    class_getInstanceMethod(self.class, @selector(swizzledDealloc)));
@@ -91,18 +91,18 @@
         NSAttributedString *originalText = self.attributedText;
         self.text = @" "; // lazily set font of `UITextView`.
         self.attributedText = originalText;
-
+        
         label = [[UILabel alloc] init];
         label.textColor = [self.class defaultPlaceholderColor];
         label.numberOfLines = 0;
         label.userInteractionEnabled = NO;
         objc_setAssociatedObject(self, @selector(placeholderLabel), label, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-
+        
         [[NSNotificationCenter defaultCenter] addObserver:self
                                                  selector:@selector(updatePlaceholderLabel)
                                                      name:UITextViewTextDidChangeNotification
                                                    object:self];
-
+        
         for (NSString *key in self.class.observingKeys) {
             [self addObserver:self forKeyPath:key options:NSKeyValueObservingOptionNew context:nil];
         }
@@ -159,18 +159,18 @@
         [self.placeholderLabel removeFromSuperview];
         return;
     }
-
+    
     [self insertSubview:self.placeholderLabel atIndex:0];
-
+    
     if (!self.attributedPlaceholder) {
         self.placeholderLabel.font = self.font;
     }
     self.placeholderLabel.textAlignment = self.textAlignment;
-
+    
     // `NSTextContainer` is available since iOS 7
     CGFloat lineFragmentPadding;
     UIEdgeInsets textContainerInset;
-
+    
 #pragma deploymate push "ignored-api-availability"
     // iOS 7+
     if (NSFoundationVersionNumber > NSFoundationVersionNumber_iOS_6_1) {
@@ -178,17 +178,26 @@
         textContainerInset = self.textContainerInset;
     }
 #pragma deploymate pop
-
+    
     // iOS 6
     else {
         lineFragmentPadding = 5;
         textContainerInset = UIEdgeInsetsMake(8, 0, 8, 0);
     }
-
+    
+    UILabel *tempLabel = [[UILabel alloc] init];
+    tempLabel.text = self.placeholder;
+    tempLabel.font = self.font;
+    
     CGFloat x = lineFragmentPadding + textContainerInset.left;
-    CGFloat y = textContainerInset.top;
     CGFloat width = CGRectGetWidth(self.bounds) - x - lineFragmentPadding - textContainerInset.right;
     CGFloat height = [self.placeholderLabel sizeThatFits:CGSizeMake(width, 0)].height;
+    
+    CGFloat textHeight = [tempLabel sizeThatFits:CGSizeMake(width, 0)].height;
+    CGFloat yPositionOffset = (textHeight - height) / 2;
+    
+    CGFloat y = textContainerInset.top + yPositionOffset;
+    
     self.placeholderLabel.frame = CGRectMake(x, y, width, height);
 }
 
