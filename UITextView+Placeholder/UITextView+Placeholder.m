@@ -162,7 +162,9 @@
 
     [self insertSubview:self.placeholderLabel atIndex:0];
 
-    self.placeholderLabel.font = self.font;
+    if (!self.attributedPlaceholder) {
+        self.placeholderLabel.font = self.font;
+    }
     self.placeholderLabel.textAlignment = self.textAlignment;
 
     // `NSTextContainer` is available since iOS 7
